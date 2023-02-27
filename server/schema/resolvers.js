@@ -1,15 +1,34 @@
-// const { signToken } = require('../utils/auth');
+const { Profile } = require('../models');
+const { signToken } = require('../utils/auth.js');
 
 const resolvers = {
   Query: {
     users: async () => {
-      console.log('users')
+      return await Profile.find()
     },
+    login: async (_, { username, password }) => {
+      const profile = await Profile.findOne({ username });
+
+      if (!profile) {
+        throw new AuthenticationError('No profile with this username found!');
+      }
+
+      const correctPw = await profile.isCorrectPassword(password);
+
+      if (!correctPw) {
+        throw new AuthenticationError('Incorrect password!');
+      }
+
+      const token = signToken(profile);
+      return { token, profile };
+    }
   },
 
   Mutation: {
-    addUser: async (parent, { username, email, password }) => {
-      console.log('add user')
+    addUser: async (_, { username, email, password }) => {
+      return Profile.create({
+        username, email, password
+      })
     },
   },
 };

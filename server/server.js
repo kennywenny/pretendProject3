@@ -1,22 +1,21 @@
 require('dotenv').config()
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
-const Profile = require('./models/Profile'); // TODO: Move this to the schemas
-//const { authMiddleware } = require('./utils/auth');
+const { authMiddleware } = require('./utils/auth');
 
 const { typeDefs, resolvers } = require('./schema');
 const db = require('./config/connection');
 const port = process.env.PORT;
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: authMiddleware
+});
 
-(async () => {
-  const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-  });
-
+db.once('open', async () => {
+  console.log('Connected to database')
   const { url } = await startStandaloneServer(server, {
     listen: { port },
   });
-
-  console.log(`🚀  Server ready at: ${url}`);
-})()
+  console.log(`Apollo server ready at: ${url}`);
+})
